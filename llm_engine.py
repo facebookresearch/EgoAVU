@@ -1,372 +1,224 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-
 import argparse
 import json
 import os
-import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional, List
 
 import torch
 import torch.distributed as dist
 import transformers
-
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
 
 @dataclass
 class InferenceConfig:
-    """Configuration for inference pipeline"""
-
     model_id: str
     jsonl_path: str
     prompt_path: str
     output_path: str
-    token_mapping: Dict[str, str]
     max_new_tokens: int = 512
-    batch_size: int = 1
     temperature: float = 0.7
     top_p: float = 0.9
     system_prompt: Optional[str] = None
+    response_key: str = "response"
+
+    qa_mode: bool = False
+    qa_keys: Optional[List[str]] = None
 
 
 class JSONLDataset(Dataset):
-    """Dataset for JSONL files with prompt template support"""
-
-    def __init__(
-        self, jsonl_path: str, prompt_template: str, token_mapping: Dict[str, str]
-    ):
-        self.data = []
+    def __init__(self, jsonl_path: str):
         with open(jsonl_path, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    self.data.append(json.loads(line))
-
-        self.prompt_template = prompt_template
-        self.token_mapping = token_mapping
+            self.data = [json.loads(l) for l in f if l.strip()]
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        item = self.data[idx]
-        prompt = self._fill_template(item)
-        return {"original_data": item, "prompt": prompt, "index": idx}
-
-    def _fill_template(self, data: dict) -> str:
-        """Fill prompt template with data from JSONL entry"""
-        prompt = self.prompt_template
-
-        tokens = re.findall(r"<(\w+)>", prompt)
-
-        for token in tokens:
-            if token in self.token_mapping:
-                json_key = self.token_mapping[token]
-                value = data.get(json_key, f"[{json_key} not found]")
-                prompt = prompt.replace(f"<{token}>", str(value))
-
-        return prompt
+        return self.data[idx]
 
 
-def load_prompt_template(prompt_path: str) -> str:
-    """Load prompt template from file"""
-    with open(prompt_path, "r", encoding="utf-8") as f:
+def load_prompt_template(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
 
-def get_distributed_info():
-    """Get distributed information from environment variables set by TorchX fb.dist.ddp"""
+def init_distributed():
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
 
     if torch.cuda.is_available():
         torch.cuda.set_device(local_rank)
-        device = f"cuda:{local_rank}"
-    else:
-        device = "cpu"
 
-    return rank, world_size, local_rank, device
-
-
-def init_distributed():
-    """Initialize distributed training if running in multi-process mode"""
-    rank, world_size, local_rank, device = get_distributed_info()
-
-    if world_size > 1:
-        if not dist.is_initialized():
-            # Initialize process group - TorchX should have set the required env vars
-            dist.init_process_group(
-                backend="nccl" if torch.cuda.is_available() else "gloo",
-                init_method="env://",
-                world_size=world_size,
-                rank=rank,
-            )
-            print(
-                f"Initialized distributed training: rank={rank}, world_size={world_size}, local_rank={local_rank}"
-            )
-        else:
-            print(
-                f"Distributed already initialized: rank={rank}, world_size={world_size}, local_rank={local_rank}"
-            )
-    else:
-        print(
-            f"Single process mode: rank={rank}, world_size={world_size}, local_rank={local_rank}"
+    if world_size > 1 and not dist.is_initialized():
+        dist.init_process_group(
+            backend="nccl" if torch.cuda.is_available() else "gloo",
+            init_method="env://",
+            rank=rank,
+            world_size=world_size,
         )
 
-    return rank, world_size, local_rank, device
+    return rank, world_size, local_rank
 
 
-def distribute_data(data_points, rank, world_size):
-    """Distribute data points across ranks for data parallel processing"""
-    total_items = len(data_points)
-
+def distribute_indices(n, rank, world_size):
     if world_size == 1:
-        print(f"Single process: processing all {total_items} items")
-        return data_points
+        return range(n)
 
-    items_per_rank = total_items // world_size
-    remainder = total_items % world_size
+    base = n // world_size
+    rem = n % world_size
+    start = rank * base + min(rank, rem)
+    end = start + base + (1 if rank < rem else 0)
+    return range(start, end)
 
-    start_idx = rank * items_per_rank + min(rank, remainder)
-    if rank < remainder:
-        end_idx = start_idx + items_per_rank + 1
-    else:
-        end_idx = start_idx + items_per_rank
 
-    rank_data = data_points[start_idx:end_idx]
-
-    print(
-        f"Rank {rank}/{world_size}: Processing {len(rank_data)} items (indices {start_idx}-{end_idx-1} of {total_items})"
-    )
-
-    return rank_data
+def stringify_information(info_list, keys):
+    lines = []
+    for i, item in enumerate(info_list, 1):
+        lines.append(f"Segment {i}:")
+        for k in keys:
+            if k in item:
+                lines.append(f"{k}: {item[k]}")
+        lines.append("")
+    return "\n".join(lines).strip()
 
 
 def run_inference_worker(config: InferenceConfig):
-    """Worker function for each GPU using TorchX distributed setup"""
+    rank, world_size, local_rank = init_distributed()
 
-    rank, world_size, local_rank, device = init_distributed()
-
-    print(
-        f"Process info - Rank: {rank}, World Size: {world_size}, Local Rank: {local_rank}, Device: {device}"
+    pipe = transformers.pipeline(
+        "text-generation",
+        model=config.model_id,
+        model_kwargs={
+            "torch_dtype": torch.bfloat16,
+            "device_map": {"": local_rank},
+        },
     )
 
-    try:
-        print(f"[GPU {rank}] Loading model...")
-        pipeline = transformers.pipeline(
-            "text-generation",
-            model=config.model_id,
-            model_kwargs={
-                "torch_dtype": torch.bfloat16,
-                "device_map": {"": local_rank},  # Force model to specific GPU
-            },
-        )
+    prompt_template = load_prompt_template(config.prompt_path)
+    dataset = JSONLDataset(config.jsonl_path)
+    indices = distribute_indices(len(dataset), rank, world_size)
 
-        print(f"[GPU {rank}] Model loaded successfully")
+    results = []
 
-        if world_size > 1:
-            dist.barrier()
-            print(f"[GPU {rank}] All models loaded, proceeding with inference")
+    for idx in tqdm(indices, desc=f"GPU {rank}", position=rank):
+        entry = json.loads(json.dumps(dataset[idx]))
 
-        prompt_template = load_prompt_template(config.prompt_path)
-        dataset = JSONLDataset(config.jsonl_path, prompt_template, config.token_mapping)
+        if config.qa_mode:
+            assert config.qa_keys, "qa_keys must be provided when qa_mode is enabled"
 
-        rank_data = distribute_data(list(range(len(dataset))), rank, world_size)
+            info_str = stringify_information(
+                entry.get("information", []),
+                config.qa_keys,
+            )
 
-        print(f"[GPU {rank}] Processing {len(rank_data)} samples")
+            prompt = prompt_template.replace("<input>", info_str)
 
-        results = []
-        for idx in tqdm(rank_data, desc=f"GPU {rank}", position=rank):
-            item = dataset[idx]
-
-            # Prepare messages
             messages = []
             if config.system_prompt:
                 messages.append({"role": "system", "content": config.system_prompt})
-            messages.append({"role": "user", "content": item["prompt"]})
+            messages.append({"role": "user", "content": prompt})
 
             try:
-                outputs = pipeline(
+                out = pipe(
                     messages,
                     max_new_tokens=config.max_new_tokens,
                     temperature=config.temperature,
                     top_p=config.top_p,
                     do_sample=True,
                 )
-
-                response = outputs[0]["generated_text"][-1]["content"]
-
-                # Combine original data with response
-                result = item["original_data"].copy()
-                result["response"] = response
-                result["prompt_used"] = item["prompt"]
-                result["processed_by_rank"] = rank  # Add rank info for debugging
-                result["total_ranks"] = world_size
-
-                results.append(result)
-
+                entry[config.response_key] = out[0]["generated_text"][-1]["content"]
             except Exception as e:
-                print(f"[GPU {rank}] Error processing sample {idx}: {e}")
-                result = item["original_data"].copy()
-                result["response"] = f"ERROR: {str(e)}"
-                result["prompt_used"] = item["prompt"]
-                result["processed_by_rank"] = rank
-                result["total_ranks"] = world_size
-                results.append(result)
+                entry[config.response_key] = f"ERROR: {str(e)}"
 
-        # Save results for this GPU with rank in filename
-        output_path = Path(config.output_path)
-
-        if world_size > 1:
-            shard_output = (
-                output_path.parent
-                / f"{output_path.stem}_rank_{rank}{output_path.suffix}"
-            )
         else:
-            shard_output = output_path
+            for info in entry.get("information", []):
+                prompt = prompt_template.replace(
+                    "<input>", json.dumps(info, ensure_ascii=False)
+                )
 
-        with open(shard_output, "w", encoding="utf-8") as f:
-            for result in results:
-                f.write(json.dumps(result, ensure_ascii=False) + "\n")
+                messages = []
+                if config.system_prompt:
+                    messages.append({"role": "system", "content": config.system_prompt})
+                messages.append({"role": "user", "content": prompt})
 
-        print(f"[GPU {rank}] Saved results to {shard_output}")
+                try:
+                    out = pipe(
+                        messages,
+                        max_new_tokens=config.max_new_tokens,
+                        temperature=config.temperature,
+                        top_p=config.top_p,
+                        do_sample=True,
+                    )
+                    info[config.response_key] = out[0]["generated_text"][-1]["content"]
+                except Exception as e:
+                    info[config.response_key] = f"ERROR: {str(e)}"
 
-        # Synchronize all processes before finishing
-        if world_size > 1:
-            print(f"[GPU {rank}] Waiting for all ranks to complete...")
-            dist.barrier()
-            print(f"[GPU {rank}] All ranks completed successfully")
+        entry["processed_by_rank"] = rank
+        entry["total_ranks"] = world_size
+        results.append(entry)
 
-    except Exception as e:
-        print(f"[GPU {rank}] Fatal error: {e}")
-        import traceback
+    out_path = Path(config.output_path)
+    shard = (
+        out_path.parent / f"{out_path.stem}_rank_{rank}{out_path.suffix}"
+        if world_size > 1
+        else out_path
+    )
 
-        traceback.print_exc()
-    finally:
-        # Cleanup - only if we initialized distributed
-        if world_size > 1 and dist.is_initialized():
-            # Don't call destroy here as TorchX handles cleanup
-            pass
-        # Clear CUDA cache
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+    with open(shard, "w", encoding="utf-8") as f:
+        for r in results:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    if world_size > 1:
+        dist.barrier()
 
 
-def merge_shard_outputs(output_path: str, world_size: int):
-    """Merge outputs from all GPU shards"""
-    output_path = Path(output_path)
-    all_results = []
+def merge_shards(output_path, world_size):
+    p = Path(output_path)
+    merged = []
 
-    # Read all shard files
-    for rank in range(world_size):
-        shard_file = (
-            output_path.parent / f"{output_path.stem}_rank_{rank}{output_path.suffix}"
-        )
-        if shard_file.exists():
-            with open(shard_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        all_results.append(json.loads(line))
-            # Remove shard file after merging
-            shard_file.unlink()
+    for r in range(world_size):
+        shard = p.parent / f"{p.stem}_rank_{r}{p.suffix}"
+        if shard.exists():
+            with open(shard, "r", encoding="utf-8") as f:
+                merged.extend(json.loads(l) for l in f if l.strip())
+            shard.unlink()
 
-    # Write merged results
-    with open(output_path, "w", encoding="utf-8") as f:
-        for result in all_results:
-            f.write(json.dumps(result, ensure_ascii=False) + "\n")
-
-    print(f"Merged {len(all_results)} results into {output_path}")
+    with open(p, "w", encoding="utf-8") as f:
+        for m in merged:
+            f.write(json.dumps(m, ensure_ascii=False) + "\n")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Multi-GPU LLM Inference Pipeline")
-    parser.add_argument(
-        "--model_id", type=str, required=True, help="Model ID from HuggingFace"
-    )
-    parser.add_argument(
-        "--jsonl_path", type=str, required=True, help="Path to input JSONL file"
-    )
-    parser.add_argument(
-        "--prompt_path", type=str, required=True, help="Path to prompt template file"
-    )
-    parser.add_argument(
-        "--output_path", type=str, required=True, help="Path to output JSONL file"
-    )
-    parser.add_argument(
-        "--mapping",
-        type=str,
-        required=True,
-        help="Token mapping in format: token1:key1,token2:key2 (e.g., vidcap:video_caption,audcap:audio_caption)",
-    )
-    parser.add_argument(
-        "--max_new_tokens", type=int, default=512, help="Maximum new tokens to generate"
-    )
-    parser.add_argument("--batch_size", type=int, default=1, help="Batch size per GPU")
-    parser.add_argument(
-        "--temperature", type=float, default=0.7, help="Sampling temperature"
-    )
-    parser.add_argument(
-        "--top_p", type=float, default=0.9, help="Top-p sampling parameter"
-    )
-    parser.add_argument(
-        "--system_prompt",
-        type=str,
-        default="You are a helpfull AI Agent",
-        help="System prompt for the model",
-    )
-    parser.add_argument(
-        "--num_gpus",
-        type=int,
-        default=None,
-        help="Number of GPUs (ignored when using TorchX - for compatibility only)",
-    )
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--model_id", required=True)
+    parser.add_argument("--jsonl_path", required=True)
+    parser.add_argument("--prompt_path", required=True)
+    parser.add_argument("--output_path", required=True)
+
+    parser.add_argument("--max_new_tokens", type=int, default=512)
+    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--top_p", type=float, default=0.9)
+    parser.add_argument("--system_prompt", default=None)
+    parser.add_argument("--response_key", default="response")
+
+    parser.add_argument("--qa_mode", action="store_true")
+    parser.add_argument("--qa_keys", nargs="+", default=None)
 
     args = parser.parse_args()
 
-    # Parse token mapping
-    token_mapping = {}
-    for pair in args.mapping.split(","):
-        token, key = pair.split(":")
-        token_mapping[token.strip()] = key.strip()
-
-    # Get distributed info from environment
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
-    print(f"Detected world_size: {world_size}, rank: {rank}")
-    print(f"Token mapping: {token_mapping}")
-
-    print(f"Model path: {args.model_id}")
-
-    # Create config
-    config = InferenceConfig(
-        model_id=args.model_id,
-        jsonl_path=args.jsonl_path,
-        prompt_path=args.prompt_path,
-        output_path=args.output_path,
-        token_mapping=token_mapping,
-        max_new_tokens=args.max_new_tokens,
-        batch_size=args.batch_size,
-        temperature=args.temperature,
-        top_p=args.top_p,
-        system_prompt=args.system_prompt,
-    )
-
-    # Run inference - TorchX handles the multiprocessing
+    config = InferenceConfig(**vars(args))
     run_inference_worker(config)
 
-    # Only rank 0 merges outputs
     if rank == 0 and world_size > 1:
-        print("Rank 0: Merging outputs from all ranks...")
-        merge_shard_outputs(args.output_path, world_size)
-        print("Rank 0: Merging complete")
+        merge_shards(args.output_path, world_size)
 
 
 if __name__ == "__main__":
