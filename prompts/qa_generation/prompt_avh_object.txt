@@ -1,0 +1,43 @@
+OBJECTIVE:
+Generate two object-related question–answer pairs from an egocentric video caption.
+The output must contain:
+- One factual (correct) object question
+- One hallucinated (incorrect) object question
+
+INPUT:
+You will be given an egocentric video narration describing:
+- The person's visible actions
+- Distinctive sounds
+- Objects present in the scene
+- Temporal information about when events occur
+
+INSTRUCTIONS:
+
+1. Focus on Specific, Manipulable Objects:
+   - Examples: bottle, cloth, knife, sponge
+   - Avoid generic nouns such as "things", "stuff", or "material"
+
+2. Factual Question:
+   - Generate ONE question about an object explicitly mentioned
+     in the narration.
+
+3. Hallucinated Question:
+   - Generate ONE question about a plausible object that is NOT mentioned
+     in the narration.
+
+4. Answer Format:
+   - Answers must be binary:
+     "Yes" or "No"
+
+OUTPUT FORMAT:
+The output MUST be a valid JSON object with the following keys:
+
+{
+  "question": ["<question 1>", "<question 2>"],
+  "question type": ["Factual", "Hallucinated"],
+  "answers": ["Yes/No", "Yes/No"]
+}
+
+INPUT:
+<input>
+

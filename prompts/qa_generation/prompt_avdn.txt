@@ -1,0 +1,40 @@
+OBJECTIVE:
+Write a single, coherent, and dense narration summarizing the entire video
+based on a list of 10-second egocentric video captions.
+
+INPUT:
+You will be given a list of narration entries.
+Each entry describes a 10-second video segment and includes:
+- start_time (in seconds)
+- end_time (in seconds)
+- caption (text description of that segment)
+
+TASK:
+Produce ONE fluent paragraph that acts as a dense narration of the full video.
+
+INSTRUCTIONS:
+
+1. Content Integration:
+   - Integrate all actions, objects, and sounds that occur across the entire video.
+   - Use ONLY the information present in the input captions.
+   - Do NOT invent or infer any new events, objects, or sounds.
+
+2. Temporal Grounding:
+   - Use timestamps (in seconds) to indicate when key events occur.
+   - When possible, group similar or adjacent events into continuous time spans
+     rather than listing each segment separately.
+
+3. Writing Constraints:
+   - Do NOT list or repeat the captions verbatim.
+   - Ensure the paragraph is concise, fluent, and naturally flowing.
+   - Avoid redundancy while preserving all important details.
+
+HUMAN-GENERATED EXAMPLES:
+Three human-created dense narration examples are provided in <examples>.
+
+OUTPUT FORMAT:
+- Output must be a SINGLE paragraph of text.
+- Do NOT output JSON or any other structured format.
+
+Here is the input: <input>
+

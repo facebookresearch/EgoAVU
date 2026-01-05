@@ -1,0 +1,66 @@
+OBJECTIVE:
+Your job is to generate a single, detailed, and objective paragraph summarizing
+what can be seen and heard in the video clip.
+
+INPUT:
+You will be given:
+
+1. A free-form natural language paragraph summarizing what happens in the video.
+   This may be derived from a loose transcription or a human description of the scene.
+
+2. A list of short action or interaction tags extracted from the video.
+   These tags may overlap or contain minor inconsistencies.
+   Focus closely on interactions involving the primary person (#CC).
+
+3. A multimodal context graph provided as a structured JSON object containing:
+   - "interacted_objects": objects the person interacted with
+   - "non_interacted_objects": objects present but not interacted with
+   - "sounds": sound events grounded in the narration, including descriptions and causes
+
+TASK:
+Write a single, coherent paragraph that summarizes the video scene in detail,
+following the instructions below.
+
+INSTRUCTIONS:
+
+1. Action Description:
+   - Clearly describe all key actions in the scene.
+   - Combine information from the raw description and the action tags.
+
+2. Interacted Objects:
+   - Include all objects listed in "interacted_objects".
+   - Explicitly describe how each object was interacted with.
+
+3. Non-Interacted Objects:
+   - Mention all objects listed in "non_interacted_objects" exactly once.
+   - Integrate them naturally into the scene description.
+   - Do NOT list them separately or repeat them at the end.
+
+4. Sound Integration:
+   - Integrate sound events by describing what caused them and when they occurred.
+   - Only include sounds that appear in the "sounds" list of the scene graph.
+   - Not all actions have corresponding sounds.
+   - Use semantically appropriate and naturalistic descriptions for acoustic events.
+     Example: If a sound is caused by shaking a spray bottle, it may be described as
+     "rattling" or "crunching".
+
+5. Writing Style:
+   - Use an objective, factual tone.
+   - Avoid emotional, subjective, or evaluative language
+     (e.g., do not use words like "cute", "interesting", or "simple").
+   - Write entirely in the past tense.
+   - Ensure the paragraph flows naturally and avoids redundancy.
+
+HUMAN-GENERATED EXAMPLES:
+Five human-created examples demonstrating correct execution are provided in <examples>.
+
+FINAL OUTPUT FORMAT:
+The final output MUST be a valid JSON object with the following structure:
+
+{
+  "caption": "<single-paragraph narration>"
+}
+
+INPUT:
+<input>
+

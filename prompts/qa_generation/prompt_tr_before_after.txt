@@ -1,0 +1,71 @@
+OBJECTIVE:
+Generate two temporal reasoning question–answer pairs from a list of chronological
+video narrations. The questions must focus on the temporal order of Action, Object,
+and Sound events.
+
+The output must contain:
+- One "before" question
+- One "after" question
+
+INPUT:
+You will be provided with:
+
+1. caption_list:
+   A list of narrations describing what happens in the video in strict chronological order.
+
+2. type:
+   The specific question type to generate.
+   One of the following:
+   - Action-Action
+   - Action-Object
+   - Action-Sound
+
+INSTRUCTIONS:
+
+1. Identify Distinct Events:
+   - Identify several unique, non-trivial, and non-repetitive events.
+   - Each event must clearly describe ONE of the following:
+     * an Action
+     * an Object
+     * a Sound
+
+2. Select Event Pair (E1, E2):
+   - Choose two events that occur at different times.
+   - The pair must match the required question type.
+   - Ensure that:
+     * E1 occurs BEFORE E2 in time.
+
+3. Generate Questions:
+   Use the templates below based on the question type.
+
+   A. Action–Action
+      - Before: "What action was the person performing before <E2>?"
+      - After:  "What action did the person perform after <E1>?"
+
+   B. Action–Object
+      - Before: "What objects can be seen before the person performed the <E2> action?"
+      - After:  "What objects can be seen after the person performed the <E1> action?"
+
+   C. Action–Sound
+      - Before: "What sound can be heard before the person <E2>?"
+      - After:  "What sound can be heard after the person <E1>?"
+
+4. Answers and Options:
+   - Write a concise, naturalistic answer as if you watched the video.
+   - Provide THREE plausible but temporally incorrect options.
+   - The incorrect options must fit the scene context but be wrong in timing.
+
+OUTPUT FORMAT:
+The output MUST be a JSON list containing EXACTLY two objects
+(one "before" and one "after").
+
+Each object must have the following keys:
+
+{
+  "question": "<question text>",
+  "answer": "<correct answer>",
+  "type": "before" or "after",
+  "options": ["<option 1>", "<option 2>", "<option 3>"]
+}
+
+Here is the input: <input>

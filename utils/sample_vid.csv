@@ -1,0 +1,10 @@
+id,start_time,end_time,split
+7481d622-2f87-4216-a6c2-53cadcd8f6e4,720,1080,train
+88aaba00-ad94-4e76-9b7d-583cd8744fd2,360,720,train
+1e3f0707-286f-433a-acfc-136af56a10b5,0,360,train
+3ba731dd-156e-419b-80de-c19d4f88aa7d,0,360,train
+9e6faee5-37c9-47ae-a39c-8564eb33c533,0,360,train
+5cccdec3-ebbc-40e0-a714-b4b6acd387b3,1080,1440,train
+dd7fed4a-ae54-40b4-96ea-855365b87697,0,360,train
+6caf467a-a949-4b5c-b88b-b2ac6cbd9f36,360,720,train
+f52ff936-bd41-46f0-a1c2-44eb5dd6e575,720,1080,train
