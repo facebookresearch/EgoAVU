@@ -1,0 +1,50 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+### model
+model_name_or_path: #model path
+video_max_pixels: 65536 # 256x256
+trust_remote_code: true
+video_fps: 1
+video_maxlen: 300
+
+### method
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_rank: 8
+lora_target: all
+deepspeed: examples/deepspeed/ds_z3_config.json
+
+### dataset
+dataset: mllm_video_audio_demo
+template: qwen2_omni
+cutoff_len: 30000
+#max_samples: 1000
+overwrite_cache: true
+preprocessing_num_workers: 64
+dataloader_num_workers: 64
+
+### output
+output_dir: saves/qwen2_omni-7b-audio-video/lora/sft
+logging_steps: 1
+save_steps: 150
+plot_loss: true
+overwrite_output_dir: true
+save_only_model: false
+
+### train
+use_audio_in_video: true
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 2
+freeze_vision_tower: true
+learning_rate: 1.0e-4
+num_train_epochs: 5.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+ddp_timeout: 180000000
+resume_from_checkpoint: null

@@ -1,0 +1,8 @@
+torch
+transformers
+vllm # tested in 0.10.0
+pandas
+av
+librosa
+accelerate
+moviepy

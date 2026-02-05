@@ -1,0 +1,55 @@
+OBJECTIVE:
+Generate ONE multiple-choice question about the temporal order of four events
+derived from a sequence of chronological egocentric video narration.
+
+INPUT:
+You will be given a sequence of detailed narrations in chronological order
+describing what happens in an egocentric video.
+
+INSTRUCTIONS:
+
+1. Identify Four Grounded Events:
+   - Identify FOUR unique, non-trivial events.
+   - Each event must include concise but meaningful details about:
+     * the person's activity,
+     * visible surroundings,
+     * and any sounds mentioned (if applicable).
+
+2. Grounding Constraint:
+   - ALL events must be directly derived from the narration.
+   - Do NOT hallucinate or invent actions, objects, or sounds.
+
+3. Create Temporal Question:
+   - Generate ONE general multiple-choice question about temporal order.
+   - Example questions:
+     * "Which event happened first?"
+     * "Which moment occurred last?"
+
+4. Create Options:
+   - Assign the four events to options A, B, C, and D.
+   - Each option description MUST EXACTLY match the corresponding event text.
+
+5. Provide Correct Answer:
+   - Indicate the correct option (A, B, C, or D) as the answer
+     based on the true chronological order.
+
+OUTPUT FORMAT:
+The output MUST be a valid JSON object with the following keys:
+
+{
+  "events": [
+    "<event 1 description>",
+    "<event 2 description>",
+    "<event 3 description>",
+    "<event 4 description>"
+  ],
+  "question": "<temporal ordering question>",
+  "options": {
+    "A": "<event description>",
+    "B": "<event description>",
+    "C": "<event description>",
+    "D": "<event description>"
+  },
+  "answer": "A/B/C/D"
+}
+Here is the input: <input>
