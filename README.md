@@ -1,7 +1,7 @@
 # EgoAVU
 Official Implementatation of **EgoAVU: Egocentric Audio-Visual Understanding**
 
-<a href='https://cs20s030.github.io/EgoAVU/'>[Project Page]</a> <a href='https://huggingface.co/datasets/facebook/EgoAVU_data'>[Huggingface Dataset]</a>
+<a href='https://arxiv.org/abs/2602.06139'>[Paper]</a> <a href='https://cs20s030.github.io/EgoAVU/'>[Project Page]</a> <a href='https://huggingface.co/datasets/facebook/EgoAVU_data'>[Huggingface Dataset]</a>
 
 We introduce EgoAVU, a scalable and automated data engine to enable egocentric audio–visual understanding. EgoAVU enriches existing egocentric narrations by integrating human actions with environmental context, explicitly linking visible objects and the sounds produced during interactions or surroundings. Leveraging this pipeline, we construct EgoAVU-Instruct (3M QAs) and EgoAVU-Bench (3K verified QAs), enabling systematic training and evaluation of Multimodal Large Language Models (MLLMs). Models finetuned with EgoAVU-Instruct exhibit high audio-visual grounding in egocentric settings.
 
