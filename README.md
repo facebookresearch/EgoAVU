@@ -13,13 +13,13 @@ We introduce EgoAVU, a scalable and automated data engine to enable egocentric a
 ## Citation
 
     If you find our code useful for your research, please consider citing:
-@article{seth2026egoavu,
-  title={EgoAVU: Egocentric Audio-Visual Understanding},
-  author={Seth, Ashish and Mei, Xinhao and Zhao, Changsheng and Nagaraja, Varun and Chang, Ernie and Meyer, Gregory P and Lan, Gael Le and Xiong, Yunyang and Chandra, Vikas and Shi, Yangyang and others},
-  journal={arXiv preprint arXiv:2602.06139},
-  year={2026}
-}
-
+    
+    @article{seth2026egoavu,
+      title={EgoAVU: Egocentric Audio-Visual Understanding},
+      author={Seth, Ashish and Mei, Xinhao and Zhao, Changsheng and Nagaraja, Varun and Chang, Ernie and Meyer, Gregory P and Lan, Gael Le and Xiong, Yunyang and Chandra, Vikas and Shi, Yangyang and others},
+      journal={arXiv preprint arXiv:2602.06139},
+      year={2026}
+    }
 
 ## Steps to run EgoAVU
 
