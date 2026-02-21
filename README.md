@@ -1,4 +1,4 @@
-# EgoAVU
+# [CVPR2026] EgoAVU
 Official Implementatation of **EgoAVU: Egocentric Audio-Visual Understanding**
 
 <a href='https://arxiv.org/abs/2602.06139'>[Paper]</a> <a href='https://cs20s030.github.io/EgoAVU/'>[Project Page]</a> <a href='https://huggingface.co/datasets/facebook/EgoAVU_data'>[Huggingface Dataset]</a>
@@ -9,6 +9,17 @@ We introduce EgoAVU, a scalable and automated data engine to enable egocentric a
 <div align=center>
 <img width=100% src="./media/teaser.png"/>
 </div>
+
+## Citation
+
+    If you find our code useful for your research, please consider citing:
+
+   @article{seth2026egoavu,
+     title={EgoAVU: Egocentric Audio-Visual Understanding},
+     author={Seth, Ashish and Mei, Xinhao and Zhao, Changsheng and Nagaraja, Varun and Chang, Ernie and Meyer, Gregory P and Lan, Gael Le and Xiong, Yunyang and Chandra, Vikas and Shi, Yangyang and others},
+     journal={arXiv preprint arXiv:2602.06139},
+     year={2026}
+   }
 
 
 ## Steps to run EgoAVU
