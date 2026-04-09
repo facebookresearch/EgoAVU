@@ -1,4 +1,4 @@
-# [CVPR2026] EgoAVU
+# [CVPR2026 HIGHLIGHT] EgoAVU
 Official Implementatation of **EgoAVU: Egocentric Audio-Visual Understanding**
 
 <a href='https://arxiv.org/abs/2602.06139'>[Paper]</a> <a href='https://cs20s030.github.io/EgoAVU/'>[Project Page]</a> <a href='https://huggingface.co/datasets/facebook/EgoAVU_data'>[Huggingface Dataset]</a>
