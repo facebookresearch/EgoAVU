@@ -1,7 +1,7 @@
-# [CVPR2026 HIGHLIGHT] EgoAVU
-Official Implementatation of **EgoAVU: Egocentric Audio-Visual Understanding**
+# [CVPR2026 HIGHLIGHT] EgoAVU, [ICASSP Oral] Exploring Audio Hallucination in Egocentric Video Understanding
+Official Implementation of **EgoAVU: Egocentric Audio-Visual Understanding** and **Exploring Audio Hallucination in Egocentric Video Understanding**
 
-<a href='https://arxiv.org/abs/2602.06139'>[Paper]</a> <a href='https://cs20s030.github.io/EgoAVU/'>[Project Page]</a> <a href='https://huggingface.co/datasets/facebook/EgoAVU_data'>[Huggingface Dataset]</a>
+<a href='https://arxiv.org/abs/2602.06139'>[Paper (CVPR)]</a> <a href='https://ieeexplore.ieee.org/document/11460380'>[Paper (ICASSP)]</a> <a href='https://cs20s030.github.io/EgoAVU/'>[Project Page]</a> <a href='https://huggingface.co/datasets/facebook/EgoAVU_data'>[Huggingface Dataset]</a>
 
 We introduce EgoAVU, a scalable and automated data engine to enable egocentric audio–visual understanding. EgoAVU enriches existing egocentric narrations by integrating human actions with environmental context, explicitly linking visible objects and the sounds produced during interactions or surroundings. Leveraging this pipeline, we construct EgoAVU-Instruct (3M QAs) and EgoAVU-Bench (3K verified QAs), enabling systematic training and evaluation of Multimodal Large Language Models (MLLMs). Models finetuned with EgoAVU-Instruct exhibit high audio-visual grounding in egocentric settings.
 
@@ -20,6 +20,19 @@ We introduce EgoAVU, a scalable and automated data engine to enable egocentric a
       journal={arXiv preprint arXiv:2602.06139},
       year={2026}
     }
+
+    @INPROCEEDINGS{11460380,
+      author={Seth, Ashish and Mei, Xinhao and Zhao, Changsheng and Nagaraja, Varun and Chang, Ernie and Meyer, Gregory P. and Le Lan, Gael and Xiong, Yunyang and Chandra, Vikas and Shi, Yangyang and Manocha, Dinesh and Cai, Zhipeng},
+      booktitle={ICASSP 2026 - 2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+      title={Exploring Audio Hallucination in Egocentric Video Understanding},
+      year={2026},
+      volume={},
+      number={},
+      pages={22527-22531},
+      doi={10.1109/ICASSP55912.2026.11460380}
+}
+
+    
 
 ## Steps to run EgoAVU
 
@@ -137,7 +150,7 @@ LLM_MODEL_ID=meta-llama/Meta-Llama-3-70B \
 
 ### QA Task Types
 
-The pipeline generates QA pairs for 7 different audio-visual understanding tasks:
+The pipeline generates QA pairs for 7 different audio-visual understanding tasks (For replicating the results reported in our ICASSP paper, please only generate/evaluate AVH-(Action, Object and Sound)):
 
 | Task | Prompt File | Description |
 |------|-------------|-------------|
