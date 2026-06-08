@@ -1,4 +1,4 @@
-# [CVPR2026 HIGHLIGHT] EgoAVU, [ICASSP Oral] Exploring Audio Hallucination in Egocentric Video Understanding
+# [CVPR2026 HIGHLIGHT (top 3.6%)] EgoAVU, [ICASSP Oral] Exploring Audio Hallucination in Egocentric Video Understanding
 Official Implementation of **EgoAVU: Egocentric Audio-Visual Understanding** and **Exploring Audio Hallucination in Egocentric Video Understanding**
 
 <a href='https://arxiv.org/abs/2602.06139'>[Paper (CVPR)]</a> <a href='https://ieeexplore.ieee.org/document/11460380'>[Paper (ICASSP)]</a> <a href='https://cs20s030.github.io/EgoAVU/'>[Project Page]</a> <a href='https://huggingface.co/datasets/facebook/EgoAVU_data'>[Huggingface Dataset]</a>
